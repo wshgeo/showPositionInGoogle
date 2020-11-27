@@ -1,0 +1,185 @@
+<!DOCTYPE html>  
+<html lang="en" style="height:100%;">  
+<head>  
+    <meta charset="UTF-8">  
+    <title>测试</title>  
+    <script src="lib/jquery.min.js"></script>
+    <link href="lib/leaflet/leaflet.css" type="text/css" rel="stylesheet"/> 
+    <script src="lib/leaflet/leaflet.js"></script>  
+    <script src="lib/leaflet/leaflet.ChineseTmsProviders.js"></script>  
+
+	<link rel="stylesheet" type="text/css" href="lib/leaflet/blinkMarker/blinkMarker.css">
+    <script type="text/javascript" src="lib/leaflet/blinkMarker/blinkMarker.js"></script>
+</head>  
+<body>  
+<div id="map" style="width: 100%;height: 100%; position:absolute;">  
+</div>  
+<script>  
+    var locations = [
+        {lat: 34.76373472595734, lng: 113.68205809401597},
+        {lat: 34.763699450569256, lng: 113.68293774271096},
+        {lat: 34.76362889974787, lng: 113.68405339471441},
+        {lat: 34.76364653745885, lng: 113.68534068548763},
+        {lat: 34.76355834886616, lng: 113.68645633749107},
+        {lat: 34.76354071113633, lng: 113.68750762495587},
+        {lat: 34.76355834886616, lng: 113.68851600272824},
+        {lat: 34.76348779792417, lng: 113.68969601927031},
+        {lat: 34.76348779792417, lng: 113.69083312612},
+        {lat: 34.76352307340271, lng: 113.69156259089145},
+        {lat: 34.762711733582805, lng: 113.69145531666037},
+        {lat: 34.76216495659781, lng: 113.69145531666037},
+        {lat: 34.761582899698816, lng: 113.69145531666037},
+        {lat: 34.760983200419744, lng: 113.69145531666037},
+        {lat: 34.760454050379415, lng: 113.69145531666037},
+        {lat: 34.75996017394853, lng: 113.69145531666037},
+        {lat: 34.75988961993153, lng: 113.69048984858048},
+        {lat: 34.75996017394853, lng: 113.68937419657702},
+        {lat: 34.75999545093445, lng: 113.6886018221131},
+        {lat: 34.76006600486102, lng: 113.68767926372563},
+        {lat: 34.760118920266386, lng: 113.68669234079952},
+        {lat: 34.76008364333321, lng: 113.68579123725826},
+        {lat: 34.760101281801695, lng: 113.68491158856327},
+        {lat: 34.76006600486102, lng: 113.68379593655979},
+        {lat: 34.76008364333321, lng: 113.68300210724966},
+        {lat: 34.760171835637806, lng: 113.68207954886218},
+        {lat: 34.76073626415632, lng: 113.68203663916974},
+        {lat: 34.76128305060383, lng: 113.68207954886218},
+        {lat: 34.76193566194566, lng: 113.6821010037084},
+        {lat: 34.762676457757564, lng: 113.6821010037084}
+    ]
+    /**  
+     * 谷歌  
+     */  
+    var normalMap = L.tileLayer.chinaProvider('Google.Normal.Map', {  
+        maxZoom: 18,  
+        minZoom: 5,
+        opacity: 1.0
+    }),  
+    hunHeSatelliteMap = L.tileLayer.chinaProvider('Google.HunHeSatellite.Map', {  
+        maxZoom: 18,  
+        minZoom: 5,
+        opacity: 1.0
+    }),  
+    satelliteMap = L.tileLayer.chinaProvider('Google.Satellite.Map', {  
+        maxZoom: 18,  
+        minZoom: 5,
+        opacity: 1.0
+    });  
+    // var normalMap = L.tileLayer.chinaProvider('myTiles.Normal.Map', {  
+    //     maxZoom: 18,  
+    //     minZoom: 5  
+    // }),  
+    // satelliteMap = L.tileLayer.chinaProvider('myTiles.Satellite.Map', {  
+    //     maxZoom: 18,  
+    //     minZoom: 5  
+    // });  
+    
+    var baseLayers = { 
+        "谷歌地图": normalMap,  
+        "谷歌影像无注记": satelliteMap,  
+        "谷歌混合影像": hunHeSatelliteMap
+    }  
+  
+    var map = L.map("map", {  
+        center: [34.76368172294049, 113.68205893048206],  
+        zoom: 16, 
+        layers: [hunHeSatelliteMap],  
+        zoomControl: false,
+        opacity: 0.2
+    });  
+  
+    L.control.layers(baseLayers, null).addTo(map);  
+    L.control.zoom({  
+        zoomInTitle: '放大',  
+        zoomOutTitle: '缩小'  
+    }).addTo(map);  
+
+    //拾取地图坐标
+    map.on('click',function (e) {
+        console.log(e.latlng);
+        L.popup().setLatLng(e.latlng).setContent(e.latlng.toString()).openOn(map)
+    })
+
+    //// 获取服务器位置数据
+    // $.ajax({
+    //     type: "POST",
+    //     url: "http://39.98.117.59:8000/post/",
+    //     cache: false,
+    //     data: '{"state":"1"}',
+    //     dataType: "text",
+    //     success: function(result){
+    //         console.log(result);
+    //     },
+    //     error: function(err){
+    //         console.log(err);
+    //     }
+    // });
+
+    //动态绘制点和线    
+    var pointIndex = 0;
+    var polylineArray = [];
+    var markerLayer = new L.featureGroup([]);
+    var blinkMarkerLayer = new L.featureGroup([]);
+    var polylineLayer = new L.featureGroup([]);
+    map.addLayer(markerLayer);
+    map.addLayer(blinkMarkerLayer);
+    map.addLayer(polylineLayer);
+
+/*
+    var refreshMarkerInterval= setInterval(function(){
+        if(pointIndex < locations.length){
+            refreshNewMarker(pointIndex);
+            refreshPolyline(pointIndex);
+            pointIndex++;
+        }
+        else{
+            clearInterval(refreshMarkerInterval);
+        }
+    },2000);
+*/
+
+    var newIcon = L.icon({
+        iconUrl: 'images/监测-红色.png',
+        iconSize: [40, 40],
+        iconAnchor: [18, 19]
+    });
+    var oldIcon = L.icon({
+        iconUrl: 'images/监测-浅蓝.png',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+    });
+    function refreshNewMarker(pointIndex){
+        var point = locations[pointIndex];
+        // L.marker([point.lat, point.lng]).addTo(map);
+        L.blinkMarker([point.lat, point.lng], {
+            iconSize: [15, 15],
+            diveColor: 'orange', 
+		    level: '3',
+            speedTime: 3
+        }).addTo(blinkMarkerLayer);
+
+        L.marker([point.lat, point.lng], {icon: newIcon}).addTo(markerLayer);
+        map.panTo([point.lat, point.lng]);
+        // console.log(markerLayer);
+    }
+
+    function refreshPolyline(pointIndex){
+        var point = locations[pointIndex];
+        polylineArray.push([point.lat, point.lng]);
+        if(polylineArray.length == 2){
+            var polyline = L.polyline(polylineArray, {color: 'orange',weight:5, dashArray:[7, 10]}).addTo(polylineLayer);
+            polylineArray.splice(0,1);
+            //更新前一个marker的图标
+            var markerLayerLength = markerLayer.getLayers().length;
+            var previousMarker = markerLayer.getLayers()[markerLayerLength-2];
+            previousMarker.setIcon(oldIcon);
+            
+            var offBlinkMarker = blinkMarkerLayer.getLayers()[0];
+            blinkMarkerLayer.removeLayer(offBlinkMarker);
+        }
+    }
+
+
+</script>  
+</body>  
+</html>
